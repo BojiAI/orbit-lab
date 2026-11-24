@@ -1,0 +1,12 @@
+[package]
+name = "m3-wasm"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.63"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+orbit-lab = { path = "../.." }

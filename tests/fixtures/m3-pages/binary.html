@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Lab · M3 双星快照</title>
+<style>
+  :root { color-scheme: dark; font: 16px system-ui,sans-serif; background: #091421; color: #eaf3ff; }
+  body { max-width: 760px; margin: auto; padding: 1rem; }
+  .binary-view { display: block; width: 100%; height: min(52vh,480px); background: #101e30; border-radius: 12px; }
+  .binary-view[hidden] { display: none; }
+  #binary-3d { cursor: grab; }
+  #binary-3d:active { cursor: grabbing; }
+  .view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin: .75rem 0; }
+  form { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: 1rem 0; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; } input { width: 5em; }
+</style>
+<h1>双星轨道</h1>
+<nav aria-label="实验导航"><a href="./scene.html">太空实验台</a> · <a href="./flyby.html">三体飞掠</a></nav>
+<div class="view-controls">
+  <label>投影
+    <select id="binary-view"><option value="xy">XY 投影</option><option value="3d">三维</option></select>
+  </label>
+  <button id="binary-fit" type="button" hidden>重置视角</button>
+  <span id="binary-view-hint" hidden>拖动旋转 · 滚轮或双指缩放</span>
+</div>
+<p id="binary-view-status" role="status" hidden></p>
+<svg id="binary-xy" class="binary-view" viewBox="-1.08 -1.08 2.16 2.16" role="img" aria-label="双星在当前视角下的轨迹和位置">
+  <g transform="scale(1,-1)">
+    <g id="world" transform="translate(0 0)">
+      <path d="M-1 0H1 M0 -1V1" stroke="#354457" stroke-width=".004"/>
+      <polyline id="trail1" fill="none" stroke="#ffba70" stroke-width=".008"/>
+      <polyline id="trail2" fill="none" stroke="#62cdea" stroke-width=".005" stroke-dasharray=".02 .015"/>
+      <g fill="none" stroke="#cf9aff" stroke-width=".012" stroke-dasharray=".008 .016">
+        <polyline id="trailB1"/><polyline id="trailB2"/>
+      </g>
+      <path id="barycenterB" d="M-.026 0H.026 M0 -.026V.026" stroke="#77efa4" stroke-width=".009" visibility="hidden"/>
+      <circle r=".012" fill="white"/>
+      <circle id="star1" r=".035" fill="#ffba70" visibility="hidden"/>
+      <circle id="star2" r=".035" fill="#62cdea" visibility="hidden"/>
+      <g fill="none" stroke="#cf9aff" stroke-width=".01">
+        <circle id="starB1" r=".049" visibility="hidden"/><circle id="starB2" r=".049" visibility="hidden"/>
+      </g>
+    </g>
+  </g>
+</svg>
+<canvas id="binary-3d" class="binary-view" role="img" aria-label="双星 A、B 分支的三维轨迹" hidden></canvas>
+<label>视角 <select id="camera" disabled><option value="fixed">固定（A 初始质心）</option><option value="followB">跟随 B 当前质心</option></select></label>
+<p>跟随视角将整幅图平移，让 B 当前质心居中；历史轨迹仍保留当时的世界坐标。暂停时也可切换，不推进物理步。</p>
+<p>橙色：主星 · 蓝色：伴星 · 白点：A 的初始质心（坐标原点）。轨迹随快照更新，到终点后停止。</p>
+<p>推进 1024 个固定物理步。改变快照间隔只改变观测频率。</p>
+<form id="controls">
+  <label>质量比 q = m₂/m₁ <input id="q" type="number" min="0.01" max="100" value="1" step="any" required></label>
+  <label>快照间隔（步） <input id="cadence" type="number" min="1" max="1024" value="16" required></label>
+  <button type="submit">重建圆轨道并运行</button>
+  <button id="pause" type="button" disabled>暂停</button>
+  <button id="single" type="button" disabled>单步推进</button>
+</form>
+<p id="status" role="status">正在读取初值…</p>
+<pre id="snapshot">等待读取初值。</pre>
+<section aria-labelledby="branch-title">
+  <h2 id="branch-title">分支 B</h2>
+  <p>暂停 A 后可从当前快照创建 B。紫色圆环和点线表示 B 的位置和轨迹；绿色十字是 B 的当前质心。改质量时质心可能立即移动，但两颗星不会瞬移。</p>
+  <button id="fork" type="button" disabled>从 A 创建 B</button>
+  <button id="singleB" type="button" disabled>B 单步推进</button>
+  <button id="advanceB" type="button" disabled>B 推进 64 步（最多到终点）</button>
+  <p>只改变 B 的伴星质量，保留当前时刻、位置和速度。与按质量比重建圆轨道不同，此操作不会重置轨道，也不会改变 A。</p>
+  <p>B 在分叉或实际改质量后，从该步重新统计守恒量漂移。</p>
+  <label>B 伴星绝对质量 m₂（0.01–100）<input id="massB" type="number" min="0.01" max="100" step="any" required disabled></label>
+  <button id="applyMassB" type="button" disabled>应用到 B</button>
+  <p id="statusB" role="status">尚未创建 B。</p>
+  <pre id="snapshotB"></pre>
+  <button id="align" type="button" disabled>对齐到同一步</button>
+  <button id="pairStep" type="button" disabled>A、B 各推进一步</button>
+  <button id="pairBatch" type="button" disabled>A、B 各推进最多 64 步</button>
+  <p>两分支暂停且步数、模拟时刻一致时，可一起推进。每隔最多 8 步采样；A、B 各自积分，若中途失败则停止比较，不回滚已完成的步。</p>
+  <p id="comparison">先创建 B，再比较同一时刻的位置。</p>
+</section>
+<script type="module" src="./page.js"></script>
+</html>

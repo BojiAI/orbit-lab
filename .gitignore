@@ -1,0 +1,9 @@
+# Cargo 构建产物及项目内的隔离工具链
+target/
+/web/m3/node_modules/
+
+# README 示例命令生成的轨迹
+/binary.csv
+
+# macOS 目录元数据
+.DS_Store

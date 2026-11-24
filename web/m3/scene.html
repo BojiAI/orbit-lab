@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050810">
+<title>Orbit Lab · 太空实验台</title>
+<link rel="stylesheet" href="./scene.css">
+<main class="lab" aria-label="太空实验台">
+  <canvas id="scene-view" tabindex="0" aria-label="三维场景，可旋转、平移、缩放、选择、移动和放置天体"></canvas>
+  <header class="lab-header">
+    <div class="workspace-name">
+      <h1 class="brand"><span class="brand-mark" aria-hidden="true"></span>Orbit Lab</h1>
+      <button id="scene-scenarios-trigger" class="scene-trigger" type="button" title="切换实验场景" aria-controls="scene-scenarios-panel" aria-expanded="false">
+        <span id="scene-title">太阳系</span><span class="chevron" aria-hidden="true"></span>
+      </button>
+    </div>
+    <div class="lab-actions">
+      <button id="scene-library-trigger" class="surface" type="button" aria-controls="scene-library-panel" aria-expanded="false">
+        <span class="add-icon" aria-hidden="true"></span>天体库
+      </button>
+      <button id="scene-inspector-trigger" class="surface" type="button" aria-controls="scene-inspector-panel" aria-expanded="false">参数</button>
+    </div>
+  </header>
+
+  <section id="scene-scenarios-panel" class="panel popover scenarios" aria-labelledby="scene-scenarios-title" hidden>
+    <div class="panel-heading">
+      <h2 id="scene-scenarios-title">实验场景</h2>
+      <button class="close-panel" type="button" aria-label="关闭实验场景"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="panel-content menu-links">
+      <button id="scene-system-example" type="button">太阳系 <small>JPL DE440 · 十体</small></button>
+      <button id="scene-trisolaris-example" type="button">三体星系 <small>三颗太阳 · 恒纪元与乱纪元</small></button>
+      <button id="scene-custom-experiment" type="button">自定义实验 <small>从空坐标系开始</small></button>
+      <div class="menu-group file-actions">
+        <button id="scene-import" type="button">导入实验</button>
+        <button id="scene-export" type="button" disabled>导出实验</button>
+        <input id="scene-file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <output id="scene-file-status" class="feedback" role="status"></output>
+    </div>
+  </section>
+
+  <aside id="scene-library-panel" class="panel drawer library" aria-labelledby="scene-library-title" hidden>
+    <div class="panel-heading">
+      <div>
+        <h2 id="scene-library-title">天体库</h2>
+        <p id="scene-library-hint" class="muted">拖入场景，或点选后放置</p>
+      </div>
+      <button class="close-panel" type="button" aria-label="关闭天体库"><span aria-hidden="true">×</span></button>
+    </div>
+    <div id="scene-library" class="panel-content catalog" role="group" aria-label="可放置的天体"></div>
+  </aside>
+
+  <form id="scene-form" novalidate>
+    <aside id="scene-inspector-panel" class="panel drawer inspector" aria-labelledby="scene-inspector-title" hidden>
+      <div class="panel-heading">
+        <h2 id="scene-inspector-title">实验参数</h2>
+        <button class="close-panel" type="button" aria-label="关闭参数"><span aria-hidden="true">×</span></button>
+      </div>
+      <div class="inspector-tabs">
+        <div class="segments" role="group" aria-label="参数类型">
+          <button id="scene-body-tab" type="button" aria-pressed="true" aria-controls="scene-body-editor">天体</button>
+          <button id="scene-simulation-tab" type="button" aria-pressed="false" aria-controls="scene-settings">推演</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <section id="scene-body-editor" aria-label="天体参数">
+          <div class="body-header">
+            <details id="scene-body-picker">
+              <summary><span id="scene-body-title"></span></summary>
+              <div id="scene-body-list" role="group" aria-label="选择天体"></div>
+            </details>
+            <button id="scene-focus" class="surface" type="button" disabled>聚焦天体</button>
+          </div>
+          <fieldset id="scene-body-fields" aria-labelledby="scene-body-title">
+            <label>名称 <input name="name" type="text" required></label>
+            <div class="fields">
+              <label>半径 <input name="radius" type="number" step="any" required></label>
+              <label>密度 <input name="density" type="number" step="any" required></label>
+            </div>
+            <p class="body-mass"><span>质量（模拟单位）</span><output id="scene-mass"></output></p>
+            <p id="scene-physical-units" class="muted" hidden></p>
+            <details class="advanced-fields">
+              <summary>初始位置与速度</summary>
+              <div class="vector-group" role="group" aria-labelledby="scene-position-title">
+                <h3 id="scene-position-title">位置</h3>
+                <div class="vectors">
+                  <label>x <input name="x" type="number" step="any" required></label>
+                  <label>y <input name="y" type="number" step="any" required></label>
+                  <label>z <input name="z" type="number" step="any" required></label>
+                </div>
+              </div>
+              <div class="vector-group" role="group" aria-labelledby="scene-velocity-title">
+                <h3 id="scene-velocity-title">速度</h3>
+                <div class="vectors">
+                  <label>vx <input name="vx" type="number" step="any" required></label>
+                  <label>vy <input name="vy" type="number" step="any" required></label>
+                  <label>vz <input name="vz" type="number" step="any" required></label>
+                </div>
+              </div>
+            </details>
+            <button id="scene-remove" class="remove" type="button">移除天体</button>
+          </fieldset>
+        </section>
+        <section id="scene-settings" aria-label="推演设置" hidden>
+          <label>固定步长 Δt <input name="dt" id="scene-dt" type="number" step="any" required></label>
+          <label>总步数（选填）
+            <input name="end" id="scene-end" type="number" min="1" max="4294967295" step="1" placeholder="留空持续推演">
+          </label>
+          <details class="mass-details">
+            <summary>已应用的天体质量</summary>
+            <ul id="scene-legend"></ul>
+          </details>
+        </section>
+      </div>
+      <div class="panel-footer">
+        <output id="scene-editor-status" class="feedback" role="status"></output>
+        <button id="scene-apply" class="primary" type="submit">应用初值</button>
+      </div>
+    </aside>
+  </form>
+
+  <section id="scene-view-panel" class="panel popover view-panel" aria-labelledby="scene-view-title" hidden>
+    <div class="panel-heading">
+      <h2 id="scene-view-title">视图</h2>
+      <button class="close-panel" type="button" aria-label="关闭视图选项"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="panel-content">
+      <div class="segments" role="group" aria-label="三维画面">
+        <button id="scene-draft-view" type="button" aria-pressed="true">初值</button>
+        <button id="scene-run-view" type="button" aria-pressed="false" disabled>推演</button>
+      </div>
+      <div class="menu-links view-menu">
+        <button id="scene-moon-orbit" type="button" hidden>地月轨道</button>
+        <button id="scene-guides" type="button" aria-pressed="false" hidden>坐标辅助线</button>
+      </div>
+      <p class="muted gestures">远景定位点按半径区分大小，近景按实际半径显示。</p>
+      <p class="muted gestures">拖动天体调整位置 · 拖动空白处旋转<br>右键、Shift + 左键或双指同向拖动平移<br>对准天体滚轮放大，或以天体为中心张开双指</p>
+      <div class="image-credits" aria-label="影像来源">
+        <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/" target="_blank" rel="noreferrer">NASA</a>
+        <a href="https://svs.gsfc.nasa.gov/11197/" target="_blank" rel="noreferrer">MESSENGER 增强色</a>
+        <a href="https://www.solarsystemscope.com/textures/" target="_blank" rel="noreferrer">Solar System Scope</a>
+        <a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">素材与许可</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="scene-notices">
+    <span id="scene-axes" class="axes" aria-label="坐标轴" hidden><span>X</span><span>Y</span><span>Z</span></span>
+    <output id="scene-placement" class="surface notice" role="status" hidden></output>
+    <button id="scene-cancel-placement" class="surface" type="button" hidden>取消放置</button>
+    <p id="scene-view-status" class="surface notice" role="status" hidden></p>
+    <p id="scene-run-status" class="sr-only" role="status"></p>
+  </div>
+
+  <footer class="lab-footer" aria-label="场景控制">
+    <div class="transport surface">
+      <div class="transport-controls">
+        <button id="scene-play" class="play-button primary" type="button" disabled>
+          <span class="play-icon" aria-hidden="true"></span><span id="scene-play-label">播放</span>
+        </button>
+        <button id="scene-next" type="button" disabled>单步</button>
+        <button id="scene-restart" type="button" title="回到已应用的初值" disabled>复位</button>
+        <select id="scene-speed" class="playback-rate" aria-label="播放速度" title="播放速度">
+          <option value="0.01">0.01×</option>
+          <option value="0.05">0.05×</option>
+          <option value="0.1">0.1×</option>
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+      <p id="scene-progress" class="clock">
+        <span id="scene-clock">正在载入场景…</span><small id="scene-steps"></small>
+      </p>
+    </div>
+    <div class="camera-tools surface" aria-label="镜头">
+      <button id="scene-fit" type="button">全景</button>
+      <button id="scene-view-trigger" type="button" aria-controls="scene-view-panel" aria-expanded="false">视图<span class="chevron" aria-hidden="true"></span></button>
+    </div>
+    <button id="scene-apply-pending" class="surface pending" type="submit" form="scene-form" hidden>应用初值</button>
+  </footer>
+</main>
+<script type="module" src="./scene.js"></script>
+</html>

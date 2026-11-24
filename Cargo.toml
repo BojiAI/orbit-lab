@@ -1,0 +1,11 @@
+[package]
+name = "orbit-lab"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.63"
+description = "A three-dimensional Newtonian orbit simulator with a shared native and WebAssembly core."
+license = "MIT"
+
+[features]
+# Opt-in release measurement; pinned toolchain documented in M2_BASELINE.md.
+m2-bench = []

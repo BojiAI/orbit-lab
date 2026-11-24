@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Lab · 三体飞掠</title>
+<style>
+  :root { color-scheme: dark; font: 16px system-ui,sans-serif; background: #091421; color: #eaf3ff; }
+  body { max-width: 760px; margin: auto; padding: 1rem; }
+  form { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: 1rem 0; }
+  select, input, button { font: inherit; }
+  #flyby-initial {
+    display: grid; grid-template-columns: 1.25fr 1fr 1fr auto; align-items: end;
+    padding: .8rem; background: #101e30; border: 1px solid #2c3f55; border-radius: 12px;
+  }
+  #flyby-initial label { display: grid; gap: .3rem; min-width: 0; }
+  #flyby-initial :is(select, input, button) { min-height: 2.5rem; }
+  #flyby-initial :is(select, input) { width: 100%; box-sizing: border-box; }
+  .run-details { color: #c1d4eb; font-variant-numeric: tabular-nums; }
+  .experiment-files { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; margin: .65rem 0; }
+  .experiment-files output:empty { display: none; }
+  @media (max-width: 38rem) {
+    #flyby-initial { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  figure { margin: 0; }
+  .view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin: .75rem 0; }
+  .orbit-view { display: block; width: 100%; height: min(59vh,500px); background: #101e30; border-radius: 12px; }
+  .orbit-view[hidden] { display: none; }
+  #flyby-3d { cursor: grab; }
+  #flyby-3d:active { cursor: grabbing; }
+  figcaption { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; margin: .7rem 0; }
+  #snapshot { font-variant-numeric: tabular-nums; line-height: 1.6; }
+</style>
+<nav aria-label="实验导航"><a href="./scene.html">太空实验台</a> · <a href="./binary.html">双星对照</a></nav>
+<h1>三体飞掠</h1>
+<form id="flyby-initial">
+  <label>场景 <select id="flyby-preset"></select></label>
+  <label>来客横向位置 y <input id="flyby-y" type="number" step="any" required></label>
+  <label>来客入射速度 vx <input id="flyby-vx" type="number" step="any" required></label>
+  <button type="submit">应用初值</button>
+</form>
+<p id="flyby-active-initial" class="run-details" aria-live="polite"></p>
+<form id="flyby-controls">
+  <label>步长方案
+    <select id="flyby-mode">
+      <option value="fixed">固定步长</option>
+      <option value="adaptive">近遇变步长</option>
+    </select>
+  </label>
+  <button id="flyby-play" type="button" disabled>播放</button>
+  <button id="flyby-next" type="button" disabled>下一采样点</button>
+  <button type="submit">从头播放</button>
+</form>
+<p id="flyby-step-detail" class="run-details"></p>
+<div class="experiment-files" aria-label="实验文件">
+  <button id="flyby-export" type="button">导出实验</button>
+  <button id="flyby-import" type="button">导入实验</button>
+  <input id="flyby-file" type="file" accept=".json,application/json" hidden>
+  <output id="flyby-file-status" role="status"></output>
+</div>
+<figure>
+  <div class="view-controls">
+    <label>视角
+      <select id="flyby-view">
+        <option value="xy">XY 投影</option>
+        <option value="3d">三维</option>
+      </select>
+    </label>
+    <button id="flyby-camera-reset" type="button" hidden>重置视角</button>
+    <span id="flyby-camera-hint" hidden>拖动旋转 · 滚轮或双指缩放</span>
+  </div>
+  <p id="flyby-view-status" role="status" hidden></p>
+  <svg id="flyby-xy" class="orbit-view" viewBox="-3.4 -1.2 4.8 4.8" role="img" aria-label="主星、伴星和来客轨迹的 XY 投影">
+    <g transform="scale(1,-1)">
+      <path d="M-3.2 0H1.2 M0 -3.4V1" stroke="#354457" stroke-width=".014"/>
+      <g fill="none" stroke-width=".016">
+        <polyline id="trail1" stroke="#ffba70"/>
+        <polyline id="trail2" stroke="#62cdea"/>
+        <polyline id="trail3" stroke="#8be5ad"/>
+      </g>
+      <circle id="star1" r=".054" fill="#ffba70" visibility="hidden"/>
+      <circle id="star2" r=".046" fill="#62cdea" visibility="hidden"/>
+      <circle id="star3" r=".048" fill="#8be5ad" visibility="hidden"/>
+    </g>
+  </svg>
+  <canvas id="flyby-3d" class="orbit-view" role="img" aria-label="主星、伴星和来客的三维轨迹" hidden></canvas>
+  <figcaption>
+    <span style="color: #ffba70">● 主星</span>
+    <span style="color: #62cdea">● 伴星</span>
+    <span style="color: #8be5ad">● 来客</span>
+    <span id="flyby-grid-key" hidden>网格在 z = 0 平面</span>
+  </figcaption>
+</figure>
+<p id="snapshot"></p>
+<p id="status" role="status">正在读取初值…</p>
+<script type="module" src="./flyby.js"></script>
+</html>

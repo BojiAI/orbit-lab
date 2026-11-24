@@ -1,0 +1,16 @@
+{
+  "name": "orbit-lab-m3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.json && esbuild flyby-3d.ts --bundle --format=esm --target=es2022 --minify --outfile=../../target/m3-site/flyby-3d.js"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.187.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3"
+  }
+}
